@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Friendly Weather</string>
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="drawer_open">Open the navigation drawer</string>
+    <string name="drawer_close">Close the navigation drawer</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_settings">Settings</string>
+</resources>
