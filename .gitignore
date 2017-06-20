@@ -38,6 +38,7 @@ captures/
 .idea/tasks.xml
 .idea/gradle.xml
 .idea/vcs.xml
+.idea/modules.xml
 .idea/dictionaries
 .idea/libraries
 

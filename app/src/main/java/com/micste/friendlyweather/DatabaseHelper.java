@@ -7,6 +7,8 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class DatabaseHelper extends SQLiteOpenHelper {
@@ -51,10 +53,70 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     public void updateWeather(Weather weather) {
-        Log.d(TAG, "updateWeather method called");
+        SQLiteDatabase db = this.getReadableDatabase();
+        ContentValues values = weatherToContentValues(weather);
+
+        String selection = DatabaseContract.LocationsEntry.COLUMN_NAME_PLACE + " LIKE ?";
+        String[] selectionArgs =  { weather.getPlace() };
+
+        int count = db.update(
+                DatabaseContract.LocationsEntry.TABLE_NAME,
+                values,
+                selection,
+                selectionArgs
+        );
+
+        Log.i(TAG, "Updated weather where location name is: " + weather.getPlace());
     }
 
-    private static ContentValues weatherToContentValues(Weather weather) {
+    public void deleteWeather(Weather weather) {
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        String selection = DatabaseContract.LocationsEntry.COLUMN_NAME_PLACE + " LIKE ?";
+        String[] selectionArgs = { weather.getPlace() };
+
+        db.delete(DatabaseContract.LocationsEntry.TABLE_NAME, selection, selectionArgs);
+    }
+
+    public List<Weather> getWeather() {
+        SQLiteDatabase db = getReadableDatabase();
+
+        Cursor cursor = db.query(DatabaseContract.LocationsEntry.TABLE_NAME, null, null, null, null, null, null);
+        Log.i(TAG, "Loaded " + cursor.getCount() + " locations...");
+
+        List<Weather> weatherList = new ArrayList<>();
+        if (cursor.getCount() > 0) {
+            cursor.moveToFirst();
+            while (!cursor.isAfterLast()) {
+                Weather weather = cursorToWeather(cursor);
+                weatherList.add(weather);
+                cursor.moveToNext();
+            }
+            Log.i(TAG, "Weather locations loaded successfully...");
+        }
+
+        cursor.close();
+        db.close();
+        return weatherList;
+
+
+    }
+
+    private Weather cursorToWeather(Cursor cursor) {
+        Weather weather = new Weather();
+        weather.setPlace(cursor.getString(cursor.getColumnIndex(DatabaseContract.LocationsEntry.COLUMN_NAME_PLACE)));
+        weather.setLatitude(cursor.getString(cursor.getColumnIndex(DatabaseContract.LocationsEntry.COLUMN_NAME_LATITUDE)));
+        weather.setLongitude(cursor.getString(cursor.getColumnIndex(DatabaseContract.LocationsEntry.COLUMN_NAME_LONGITUDE)));
+        weather.setSummary(cursor.getString(cursor.getColumnIndex(DatabaseContract.LocationsEntry.COLUMN_NAME_SUMMARY)));
+        weather.setIcon(cursor.getString(cursor.getColumnIndex(DatabaseContract.LocationsEntry.COLUMN_NAME_ICON)));
+        weather.setTemperature(cursor.getString(cursor.getColumnIndex(DatabaseContract.LocationsEntry.COLUMN_NAME_TEMPERATURE)));
+        weather.setHumidity(cursor.getString(cursor.getColumnIndex(DatabaseContract.LocationsEntry.COLUMN_NAME_HUMIDITY)));
+        weather.setWindSpeed(cursor.getString(cursor.getColumnIndex(DatabaseContract.LocationsEntry.COLUMN_NAME_WINDSPEED)));
+
+        return weather;
+    }
+
+    private ContentValues weatherToContentValues(Weather weather) {
         ContentValues values = new ContentValues();
         values.put(DatabaseContract.LocationsEntry.COLUMN_NAME_PLACE, weather.getPlace());
         values.put(DatabaseContract.LocationsEntry.COLUMN_NAME_LATITUDE, weather.getLatitude());
@@ -68,7 +130,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return values;
     }
 
-    public boolean exists(String valueToCheck) {
+    private boolean exists(String valueToCheck) {
         SQLiteDatabase db = this.getReadableDatabase();
         String[] columns = {DatabaseContract.LocationsEntry.COLUMN_NAME_PLACE };
         String selection = DatabaseContract.LocationsEntry.COLUMN_NAME_PLACE + " =?";
@@ -78,9 +140,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         Cursor cursor = db.query(DatabaseContract.LocationsEntry.TABLE_NAME, columns, selection, selectionArgs, null, null,
                 null, limit);
         if (cursor.moveToFirst()) {
+            cursor.close();
             db.close();
             return true;
         } else {
+            cursor.close();
             db.close();
             return false;
         }
