@@ -3,7 +3,10 @@ package com.micste.friendlyweather;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -20,6 +23,8 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import java.util.List;
+
 
 public class HomeFragment extends Fragment {
     // TODO: Rename parameter arguments, choose names that match
@@ -31,6 +36,10 @@ public class HomeFragment extends Fragment {
     private RequestQueue requestQueue;
     private Gson gson;
     private Context context;
+    private DatabaseHelper dbHelper;
+    private List<Weather> weathers;
+    private RecyclerView rv;
+    private RvAdapter adapter;
 
     // TODO: Rename and change types of parameters
     private String mParam1;
@@ -62,6 +71,7 @@ public class HomeFragment extends Fragment {
         GsonBuilder gsonBuilder = new GsonBuilder();
         gson = gsonBuilder.create();
         context = getActivity().getApplicationContext();
+        dbHelper = new DatabaseHelper(context);
 
         requestQueue = Volley.newRequestQueue(context);
         fetchWeather();
@@ -73,6 +83,19 @@ public class HomeFragment extends Fragment {
                              Bundle savedInstanceState) {
 
         return inflater.inflate(R.layout.fragment_home, container, false);
+    }
+
+    @Override
+    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+        weathers = dbHelper.getWeather();
+        rv = (RecyclerView) view.findViewById(R.id.rv);
+        LinearLayoutManager llm = new LinearLayoutManager(context);
+        rv.setLayoutManager(llm);
+
+        adapter = new RvAdapter(weathers);
+        rv.setAdapter(adapter);
     }
 
     private void fetchWeather() {
@@ -88,8 +111,8 @@ public class HomeFragment extends Fragment {
             Weather weather = gson.fromJson(data.get("currently"), Weather.class);
             weather.setPlace("My current location");
             Log.d(TAG, weather.getSummary() + " " + weather.getTemperature());
-            DatabaseHelper dbHelper = new DatabaseHelper(context);
             dbHelper.saveData(weather);
+
 
         }
     };
